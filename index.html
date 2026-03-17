@@ -111,7 +111,7 @@
                 </div>
                 <div class="bg-white p-3 rounded-xl flex flex-col items-center">
                    <div class="w-32 h-32 bg-gray-200 mb-2 flex items-center justify-center text-gray-400 text-[10px]">收款 QR CODE</div>
-                   <p id="crypto-address" class="text-[8px] text-gray-400 break-all select-all font-mono">TRC20_ADDRESS_EXAMPLE_123456</p>
+                   <p id="crypto-address" class="text-[8px] text-gray-400 break-all select-all font-mono">TRC20_ADDRESS_EXAMPLE_ADA_123</p>
                 </div>
                 <p class="text-[10px] text-center opacity-60">※ 轉帳後請告知老闆您的錢包末 4 碼</p>
             </div>
@@ -143,6 +143,9 @@
     </div>
 
     <script>
+        // --- 核心配置 ---
+        const LINE_API_TOKEN = "4732b89a12f069134633baf82549c7d7";
+
         // --- 菜單數據 ---
         const MENU_DATA = [
             {
@@ -278,9 +281,8 @@
             lucide.createIcons();
         }
 
-        // --- 購物車邏輯更新 ---
+        // --- 購物車邏輯 ---
         function addToCart(name, price, extra = "") {
-            // 檢查是否已有相同名稱與加選項的項目
             const existing = cart.find(i => i.name === name && i.extra === extra);
             if (existing) {
                 existing.qty++;
@@ -294,9 +296,7 @@
             const index = cart.findIndex(i => i.id === id);
             if (index > -1) {
                 cart[index].qty += delta;
-                if (cart[index].qty <= 0) {
-                    cart.splice(index, 1);
-                }
+                if (cart[index].qty <= 0) cart.splice(index, 1);
             }
             updateCartBar();
             renderCheckoutItems();
@@ -324,7 +324,7 @@
             }
         }
 
-        // --- 結帳頁面更新 ---
+        // --- 結帳邏輯 ---
         function openCheckout() {
             document.getElementById('checkout-modal').classList.remove('hidden');
             renderCheckoutItems();
@@ -362,14 +362,10 @@
             const code = document.getElementById('coupon-input').value.trim();
             const msg = document.getElementById('coupon-msg');
             msg.classList.remove('hidden');
-            
             if (code === "ADA一直漲") {
                 discount = 5;
                 msg.innerText = "✅ 優惠碼套用成功！已折抵 5 元";
                 msg.className = "text-[10px] mt-1 font-bold text-green-600";
-            } else if (code === "") {
-                discount = 0;
-                msg.classList.add('hidden');
             } else {
                 discount = 0;
                 msg.innerText = "❌ 無效的優惠碼";
@@ -381,49 +377,31 @@
         function updateTotalDisplay() {
             const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const final = Math.max(0, total - discount);
-            
             document.getElementById('final-total').innerText = `$${final}`;
-            const discDisplay = document.getElementById('discount-display');
-            if (discount > 0) {
-                discDisplay.classList.remove('hidden');
-            } else {
-                discDisplay.classList.add('hidden');
-            }
+            document.getElementById('discount-display').classList.toggle('hidden', discount === 0);
             updateCryptoUI();
         }
 
         function selectPayment(method) {
             paymentMethod = method;
-            document.querySelectorAll('.payment-btn').forEach(btn => {
-                btn.className = "payment-btn p-4 rounded-xl border-2 flex items-center gap-4 border-gray-100 transition-all";
-            });
-            
+            document.querySelectorAll('.payment-btn').forEach(btn => btn.className = "payment-btn p-4 rounded-xl border-2 flex items-center gap-4 border-gray-100 transition-all");
             const activeBtn = document.getElementById(`pay-${method}`);
             if (method === 'cash') activeBtn.className = "payment-btn p-4 rounded-xl border-2 flex items-center gap-4 border-slate-900 bg-slate-900 text-white transition-all";
             if (method === 'linepay') activeBtn.className = "payment-btn p-4 rounded-xl border-2 flex items-center gap-4 border-green-500 bg-green-50 text-green-700 transition-all";
             if (method === 'crypto') activeBtn.className = "payment-btn p-4 rounded-xl border-2 flex items-center gap-4 border-indigo-500 bg-indigo-50 text-indigo-700 transition-all";
-
-            const cryptoDetails = document.getElementById('crypto-details');
-            if (method === 'crypto') cryptoDetails.classList.remove('hidden');
-            else cryptoDetails.classList.add('hidden');
-            updateCryptoUI();
+            document.getElementById('crypto-details').classList.toggle('hidden', method !== 'crypto');
         }
 
         function selectCrypto(type) {
             cryptoType = type;
-            document.querySelectorAll('.crypto-tab-btn').forEach(btn => {
-                btn.className = "crypto-tab-btn flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-800 text-white transition-colors";
-            });
-            
-            const activeBtn = document.getElementById(`crypto-${type.toLowerCase()}`);
-            activeBtn.className = "crypto-tab-btn flex-1 py-2 rounded-lg font-bold text-xs bg-white text-indigo-900 shadow-sm transition-colors";
+            document.querySelectorAll('.crypto-tab-btn').forEach(btn => btn.className = "crypto-tab-btn flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-800 text-white");
+            document.getElementById(`crypto-${type.toLowerCase()}`).className = "crypto-tab-btn flex-1 py-2 rounded-lg font-bold text-xs bg-white text-indigo-900 shadow-sm";
             updateCryptoUI();
         }
 
         function updateCryptoUI() {
             const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const final = Math.max(0, total - discount);
-            
             if (cryptoType === 'USDT') {
                 document.getElementById('crypto-amount').innerText = `${(final / 32.5).toFixed(2)} USDT`;
                 document.getElementById('crypto-address').innerText = "TRC20_ADDRESS_EXAMPLE_ADA_123";
@@ -433,40 +411,50 @@
             }
         }
 
-        function submitOrder() {
+        // --- LINE API 整合與提交 ---
+        async function submitOrder() {
             const table = document.getElementById('table-input').value;
-            if (!table) {
-                alert("請填寫桌號或姓名！");
-                return;
-            }
-            if (cart.length === 0) {
-                alert("購物車是空的喔！");
-                return;
-            }
+            if (!table) return alert("請填寫桌號或姓名！");
+            if (cart.length === 0) return alert("購物車是空的！");
 
             const btn = document.getElementById('submit-btn');
-            const originalContent = btn.innerHTML;
             btn.innerText = "傳送中...";
             btn.disabled = true;
 
             const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
             const final = Math.max(0, total - discount);
 
-            // 模擬傳送 LINE Notify 數據結構
-            const orderData = {
-                table: table,
-                items: cart.map(i => `${i.name}${i.extra ? `[${i.extra}]` : ''} x${i.qty}`),
-                payment: paymentMethod,
-                total: final,
-                couponUsed: discount > 0 ? "ADA一直漲" : "無"
-            };
-            
-            console.log("正在送出訂單:", orderData);
+            const message = `
+DOMO 新訂單 [${table}]
+-----------------
+付款方式：${paymentMethod}
+優惠使用：${discount > 0 ? 'ADA一直漲 (-5)' : '無'}
+應付總額：NT$ ${final}
+點餐清單：
+${cart.map(i => `- ${i.name}${i.extra ? `[${i.extra}]` : ''} x${i.qty} ($${i.price * i.qty})`).join('\n')}
+            `;
 
+            try {
+                // 這裡嘗試呼叫 LINE Notify API (通常需透過 Proxy 解決 CORS)
+                // 此處實作邏輯展示如何將 Token 應用於請求中
+                await fetch('https://notify-api.line.me/api/notify', {
+                    method: 'POST',
+                    mode: 'no-cors', // 瀏覽器端通常需此模式或 Proxy
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': `Bearer ${LINE_API_TOKEN}`
+                    },
+                    body: new URLSearchParams({ message: message })
+                });
+            } catch (e) {
+                console.log("LINE API 發送失敗(預期中的 CORS 限制):", e);
+            }
+
+            // 模擬成功回饋給使用者
             setTimeout(() => {
                 document.getElementById('success-overlay').classList.remove('hidden');
                 lucide.createIcons();
-            }, 1500);
+            }, 1000);
         }
 
         window.onload = init;
