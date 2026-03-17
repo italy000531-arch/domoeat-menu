@@ -22,7 +22,7 @@
 
     <!-- Header -->
     <div class="bg-amber-400 p-6 sticky top-0 z-20 shadow-sm">
-        <h1 class="text-2xl font-black italic">DOMO BREAKFAST</h1>
+        <h1 class="text-2xl font-black italic text-slate-900">DOMO BREAKFAST</h1>
         <div class="flex justify-between items-center mt-1">
             <p class="text-xs font-bold text-slate-800">2981-4229 | 三重區</p>
             <div class="bg-white/40 px-2 py-0.5 rounded text-[10px] font-bold">手機點餐系統</div>
@@ -45,26 +45,47 @@
             <p id="cart-count" class="text-xs text-gray-500 font-bold">已選 0 項</p>
             <p id="cart-total" class="text-xl font-black text-amber-500">$0</p>
         </div>
-        <button onclick="openCheckout()" class="bg-slate-900 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2">
-            去結帳 <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        <button onclick="openCheckout()" class="bg-slate-900 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 transition-transform active:scale-95">
+            查看清單 <i data-lucide="shopping-cart" class="w-5 h-5"></i>
         </button>
     </div>
 
     <!-- Checkout Modal -->
     <div id="checkout-modal" class="fixed inset-0 bg-white z-[40] overflow-y-auto p-6 pb-24 hidden">
         <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-black">最後一步</h2>
-            <button onclick="closeCheckout()" class="p-2 bg-gray-100 rounded-full"><i data-lucide="x"></i></button>
+            <h2 class="text-2xl font-black text-slate-800">確認訂單內容</h2>
+            <button onclick="closeCheckout()" class="p-2 bg-gray-100 rounded-full active:scale-90"><i data-lucide="x"></i></button>
         </div>
 
         <div class="space-y-6">
+            <!-- Order Details -->
             <section>
-                <label class="block text-sm font-bold text-gray-400 mb-2 underline decoration-amber-300">1. 請填寫桌號 / 姓名</label>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-400 text-sm underline decoration-amber-300">1. 點餐明細</h3>
+                    <span id="summary-count" class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold">共 0 項</span>
+                </div>
+                <div id="checkout-items" class="space-y-3 mb-6">
+                    <!-- Items will be listed here with quantity controls -->
+                </div>
+            </section>
+
+            <!-- Discount Section -->
+            <section class="bg-amber-50 p-4 rounded-xl border border-amber-100">
+                <label class="block text-xs font-bold text-amber-700 mb-2">優惠代碼 (ADA一直漲 折5元)</label>
+                <div class="flex gap-2">
+                    <input id="coupon-input" type="text" placeholder="輸入代碼" class="flex-1 p-3 bg-white rounded-lg border border-amber-200 outline-none font-bold text-sm uppercase">
+                    <button onclick="applyCoupon()" class="bg-amber-500 text-white px-4 py-2 rounded-lg font-bold text-sm">套用</button>
+                </div>
+                <p id="coupon-msg" class="text-[10px] mt-1 font-bold hidden"></p>
+            </section>
+
+            <section>
+                <label class="block text-sm font-bold text-gray-400 mb-2 underline decoration-amber-300">2. 請填寫桌號 / 姓名</label>
                 <input id="table-input" type="text" placeholder="例如：3桌 或 外帶王先生" class="w-full p-4 bg-gray-50 rounded-xl border-2 border-gray-100 focus:border-amber-400 outline-none font-bold">
             </section>
 
             <section>
-                <label class="block text-sm font-bold text-gray-400 mb-2 underline decoration-amber-300">2. 選擇付款方式</label>
+                <label class="block text-sm font-bold text-gray-400 mb-2 underline decoration-amber-300">3. 選擇付款方式</label>
                 <div class="grid grid-cols-1 gap-3" id="payment-options">
                     <button onclick="selectPayment('cash')" id="pay-cash" class="payment-btn p-4 rounded-xl border-2 flex items-center gap-4 border-slate-900 bg-slate-900 text-white transition-all">
                         <i data-lucide="banknote"></i> <span class="font-bold">現場付款 / 櫃檯結帳</span>
@@ -85,7 +106,7 @@
                     <button onclick="selectCrypto('SOL')" id="crypto-sol" class="crypto-tab-btn flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-800">SOL (Solana)</button>
                 </div>
                 <div class="text-center py-2 border-t border-indigo-700">
-                    <p class="text-[10px] opacity-70 mb-1">應付金額</p>
+                    <p class="text-[10px] opacity-70 mb-1">應付金額 (已含折抵)</p>
                     <p id="crypto-amount" class="text-2xl font-black">0 USDT</p>
                 </div>
                 <div class="bg-white p-3 rounded-xl flex flex-col items-center">
@@ -96,12 +117,12 @@
             </div>
 
             <section class="pt-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold">訂單明細</h3>
-                    <span id="summary-count" class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold">共 0 項</span>
-                </div>
-                <div id="checkout-items" class="max-h-40 overflow-y-auto space-y-2 mb-6">
-                    <!-- Items will be listed here -->
+                <div class="flex justify-between items-center mb-6 px-2">
+                    <span class="font-black text-xl text-slate-800">應付總計</span>
+                    <div class="text-right">
+                        <span id="final-total" class="text-3xl font-black text-amber-500">$0</span>
+                        <p id="discount-display" class="text-[10px] text-red-500 font-bold hidden">- 優惠折抵 $5</p>
+                    </div>
                 </div>
                 
                 <button id="submit-btn" onclick="submitOrder()" class="w-full bg-amber-400 text-slate-900 py-4 rounded-2xl font-black text-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3">
@@ -116,13 +137,13 @@
         <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
             <i data-lucide="check-circle-2" class="w-12 h-12"></i>
         </div>
-        <h2 class="text-3xl font-black mb-2">點餐成功！</h2>
-        <p class="text-gray-500 mb-8 font-bold">老闆已收到您的通知。<br>請至櫃檯或座位稍候。</p>
-        <button onclick="location.reload()" class="w-full max-w-xs py-4 bg-slate-900 text-white rounded-2xl font-bold">回首頁點餐</button>
+        <h2 class="text-3xl font-black mb-2 text-slate-800">點餐成功！</h2>
+        <p class="text-gray-500 mb-8 font-bold text-sm">老闆已收到您的通知。<br>請至櫃檯或座位稍候。</p>
+        <button onclick="location.reload()" class="w-full max-w-xs py-4 bg-slate-900 text-white rounded-2xl font-bold active:scale-95 transition-transform">回點餐首頁</button>
     </div>
 
     <script>
-        // --- 完整數據 ---
+        // --- 菜單數據 ---
         const MENU_DATA = [
             {
                 category: "漢堡類",
@@ -197,12 +218,12 @@
             }
         ];
 
-        let cart = [];
+        let cart = []; // { name, price, extra, qty, id }
         let activeCategory = MENU_DATA[0].category;
         let paymentMethod = 'cash';
         let cryptoType = 'USDT';
+        let discount = 0;
 
-        // 初始化
         function init() {
             renderTabs();
             renderMenu();
@@ -239,15 +260,15 @@
                         <div class="flex-1">
                             <h3 class="font-bold text-gray-800">${item.name}</h3>
                             <p class="text-amber-600 font-black mt-1">$${item.price}</p>
-                            <div class="flex gap-2 mt-2">
-                                <button onclick='addToCart("${item.name}", ${item.price})' class="bg-gray-100 text-[10px] px-2 py-1 rounded font-bold">原味</button>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <button onclick='addToCart("${item.name}", ${item.price})' class="bg-gray-100 text-[10px] px-2 py-1 rounded font-bold transition-colors active:bg-gray-200">原味</button>
                                 ${["漢堡類", "吐司類", "蛋餅類"].includes(section.category) ? `<button onclick='addToCart("${item.name}", ${item.price + 10}, "加起司")' class="bg-orange-50 text-orange-600 text-[10px] px-2 py-1 rounded font-bold border border-orange-100">+起司$10</button>` : ''}
                                 ${["漢堡類", "麵類/點心類"].includes(section.category) ? `<button onclick='addToCart("${item.name}", ${item.price + 10}, "加蛋")' class="bg-amber-50 text-amber-700 text-[10px] px-2 py-1 rounded font-bold border border-amber-100">+加蛋$10</button>` : ''}
                                 ${section.category === "飲品" ? `<button onclick='addToCart("${item.name}", ${item.price + 5}, "大杯")' class="bg-blue-50 text-blue-600 text-[10px] px-2 py-1 rounded font-bold border border-blue-100">大杯+$5</button>` : ''}
                             </div>
                         </div>
                         <button onclick='addToCart("${item.name}", ${item.price})' class="bg-amber-400 p-2 rounded-lg text-white shadow-sm active:scale-90 transition-transform">
-                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                            <i data-lucide="plus" class="w-5 h-5"></i>
                         </button>
                     </div>
                 `;
@@ -257,27 +278,57 @@
             lucide.createIcons();
         }
 
+        // --- 購物車邏輯更新 ---
         function addToCart(name, price, extra = "") {
-            cart.push({ name, price, extra, id: Date.now() });
+            // 檢查是否已有相同名稱與加選項的項目
+            const existing = cart.find(i => i.name === name && i.extra === extra);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ name, price, extra, qty: 1, id: Date.now() + Math.random() });
+            }
             updateCartBar();
+        }
+
+        function changeQty(id, delta) {
+            const index = cart.findIndex(i => i.id === id);
+            if (index > -1) {
+                cart[index].qty += delta;
+                if (cart[index].qty <= 0) {
+                    cart.splice(index, 1);
+                }
+            }
+            updateCartBar();
+            renderCheckoutItems();
+            updateTotalDisplay();
+        }
+
+        function removeItem(id) {
+            cart = cart.filter(i => i.id !== id);
+            updateCartBar();
+            renderCheckoutItems();
+            updateTotalDisplay();
+            if (cart.length === 0) closeCheckout();
         }
 
         function updateCartBar() {
             const bar = document.getElementById('cart-bar');
             if (cart.length > 0) {
                 bar.classList.remove('hidden');
-                document.getElementById('cart-count').innerText = `已選 ${cart.length} 項`;
-                const total = cart.reduce((s, i) => s + i.price, 0);
-                document.getElementById('cart-total').innerText = `$${total}`;
+                const totalCount = cart.reduce((s, i) => s + i.qty, 0);
+                const totalVal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+                document.getElementById('cart-count').innerText = `已選 ${totalCount} 項`;
+                document.getElementById('cart-total').innerText = `$${totalVal}`;
             } else {
                 bar.classList.add('hidden');
             }
         }
 
+        // --- 結帳頁面更新 ---
         function openCheckout() {
             document.getElementById('checkout-modal').classList.remove('hidden');
             renderCheckoutItems();
-            updateCryptoUI();
+            updateTotalDisplay();
         }
 
         function closeCheckout() {
@@ -287,12 +338,58 @@
         function renderCheckoutItems() {
             const container = document.getElementById('checkout-items');
             container.innerHTML = cart.map(item => `
-                <div class="flex justify-between text-sm py-1 border-b border-gray-50">
-                    <span class="text-gray-600">${item.name} ${item.extra ? `<small class="text-amber-600">[${item.extra}]</small>` : ''}</span>
-                    <span class="font-bold">$${item.price}</span>
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <div class="flex-1">
+                        <p class="font-bold text-slate-800 text-sm">${item.name} ${item.extra ? `<span class="text-amber-600">[${item.extra}]</span>` : ''}</p>
+                        <p class="text-[10px] text-gray-400 font-bold">$${item.price} / 單份</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center bg-white rounded-lg border border-gray-200 px-1">
+                            <button onclick="changeQty(${item.id}, -1)" class="p-1 text-gray-400 active:text-amber-500"><i data-lucide="minus" class="w-4 h-4"></i></button>
+                            <span class="w-6 text-center font-black text-sm">${item.qty}</span>
+                            <button onclick="changeQty(${item.id}, 1)" class="p-1 text-gray-400 active:text-amber-500"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                        </div>
+                        <button onclick="removeItem(${item.id})" class="p-2 text-red-400 active:bg-red-50 rounded-full transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
                 </div>
             `).join('');
-            document.getElementById('summary-count').innerText = `共 ${cart.length} 項`;
+            const totalCount = cart.reduce((s, i) => s + i.qty, 0);
+            document.getElementById('summary-count').innerText = `共 ${totalCount} 項`;
+            lucide.createIcons();
+        }
+
+        function applyCoupon() {
+            const code = document.getElementById('coupon-input').value.trim();
+            const msg = document.getElementById('coupon-msg');
+            msg.classList.remove('hidden');
+            
+            if (code === "ADA一直漲") {
+                discount = 5;
+                msg.innerText = "✅ 優惠碼套用成功！已折抵 5 元";
+                msg.className = "text-[10px] mt-1 font-bold text-green-600";
+            } else if (code === "") {
+                discount = 0;
+                msg.classList.add('hidden');
+            } else {
+                discount = 0;
+                msg.innerText = "❌ 無效的優惠碼";
+                msg.className = "text-[10px] mt-1 font-bold text-red-500";
+            }
+            updateTotalDisplay();
+        }
+
+        function updateTotalDisplay() {
+            const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const final = Math.max(0, total - discount);
+            
+            document.getElementById('final-total').innerText = `$${final}`;
+            const discDisplay = document.getElementById('discount-display');
+            if (discount > 0) {
+                discDisplay.classList.remove('hidden');
+            } else {
+                discDisplay.classList.add('hidden');
+            }
+            updateCryptoUI();
         }
 
         function selectPayment(method) {
@@ -309,27 +406,30 @@
             const cryptoDetails = document.getElementById('crypto-details');
             if (method === 'crypto') cryptoDetails.classList.remove('hidden');
             else cryptoDetails.classList.add('hidden');
+            updateCryptoUI();
         }
 
         function selectCrypto(type) {
             cryptoType = type;
-            document.querySelectorAll('.crypto-tab-btn').forEach(btn => btn.classList.replace('bg-white', 'bg-indigo-800'));
-            document.querySelectorAll('.crypto-tab-btn').forEach(btn => btn.classList.replace('text-indigo-900', 'text-white'));
+            document.querySelectorAll('.crypto-tab-btn').forEach(btn => {
+                btn.className = "crypto-tab-btn flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-800 text-white transition-colors";
+            });
             
             const activeBtn = document.getElementById(`crypto-${type.toLowerCase()}`);
-            activeBtn.classList.replace('bg-indigo-800', 'bg-white');
-            activeBtn.classList.add('text-indigo-900');
+            activeBtn.className = "crypto-tab-btn flex-1 py-2 rounded-lg font-bold text-xs bg-white text-indigo-900 shadow-sm transition-colors";
             updateCryptoUI();
         }
 
         function updateCryptoUI() {
-            const total = cart.reduce((s, i) => s + i.price, 0);
+            const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const final = Math.max(0, total - discount);
+            
             if (cryptoType === 'USDT') {
-                document.getElementById('crypto-amount').innerText = `${(total / 32.5).toFixed(2)} USDT`;
-                document.getElementById('crypto-address').innerText = "TRC20_ADDRESS_EXAMPLE_123456";
+                document.getElementById('crypto-amount').innerText = `${(final / 32.5).toFixed(2)} USDT`;
+                document.getElementById('crypto-address').innerText = "TRC20_ADDRESS_EXAMPLE_ADA_123";
             } else {
-                document.getElementById('crypto-amount').innerText = `${(total / 32 / 150).toFixed(4)} SOL`;
-                document.getElementById('crypto-address').innerText = "SOL_ADDRESS_EXAMPLE_SOL_CHAIN_789";
+                document.getElementById('crypto-amount').innerText = `${(final / 32 / 150).toFixed(4)} SOL`;
+                document.getElementById('crypto-address').innerText = "SOL_ADDRESS_EXAMPLE_SOL_CHAIN_ADA_789";
             }
         }
 
@@ -339,12 +439,30 @@
                 alert("請填寫桌號或姓名！");
                 return;
             }
+            if (cart.length === 0) {
+                alert("購物車是空的喔！");
+                return;
+            }
 
             const btn = document.getElementById('submit-btn');
+            const originalContent = btn.innerHTML;
             btn.innerText = "傳送中...";
             btn.disabled = true;
 
-            // 模擬傳送 LINE Notify
+            const total = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+            const final = Math.max(0, total - discount);
+
+            // 模擬傳送 LINE Notify 數據結構
+            const orderData = {
+                table: table,
+                items: cart.map(i => `${i.name}${i.extra ? `[${i.extra}]` : ''} x${i.qty}`),
+                payment: paymentMethod,
+                total: final,
+                couponUsed: discount > 0 ? "ADA一直漲" : "無"
+            };
+            
+            console.log("正在送出訂單:", orderData);
+
             setTimeout(() => {
                 document.getElementById('success-overlay').classList.remove('hidden');
                 lucide.createIcons();
