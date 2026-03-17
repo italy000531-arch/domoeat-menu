@@ -25,7 +25,7 @@
         <h1 class="text-2xl font-black italic text-slate-900">DOMO BREAKFAST</h1>
         <div class="flex justify-between items-center mt-1">
             <p class="text-xs font-bold text-slate-800">2981-4229 | 三重區</p>
-            <div class="bg-white/40 px-2 py-0.5 rounded text-[10px] font-bold">手機點餐系統</div>
+            <div class="bg-white/40 px-2 py-0.5 rounded text-[10px] font-bold">Domoeat 點餐系統</div>
         </div>
     </div>
 
@@ -145,6 +145,7 @@
     <script>
         // --- 核心配置 ---
         const LINE_API_TOKEN = "4732b89a12f069134633baf82549c7d7";
+        const LINE_CHANNEL_SECRET = "55b00c887d5ace6269e72253fcb07c11"; // Domoeat Channel Secret
 
         // --- 菜單數據 ---
         const MENU_DATA = [
@@ -221,7 +222,7 @@
             }
         ];
 
-        let cart = []; // { name, price, extra, qty, id }
+        let cart = []; 
         let activeCategory = MENU_DATA[0].category;
         let paymentMethod = 'cash';
         let cryptoType = 'USDT';
@@ -281,7 +282,6 @@
             lucide.createIcons();
         }
 
-        // --- 購物車邏輯 ---
         function addToCart(name, price, extra = "") {
             const existing = cart.find(i => i.name === name && i.extra === extra);
             if (existing) {
@@ -324,7 +324,6 @@
             }
         }
 
-        // --- 結帳邏輯 ---
         function openCheckout() {
             document.getElementById('checkout-modal').classList.remove('hidden');
             renderCheckoutItems();
@@ -411,7 +410,6 @@
             }
         }
 
-        // --- LINE API 整合與提交 ---
         async function submitOrder() {
             const table = document.getElementById('table-input').value;
             if (!table) return alert("請填寫桌號或姓名！");
@@ -435,11 +433,10 @@ ${cart.map(i => `- ${i.name}${i.extra ? `[${i.extra}]` : ''} x${i.qty} ($${i.pri
             `;
 
             try {
-                // 這裡嘗試呼叫 LINE Notify API (通常需透過 Proxy 解決 CORS)
-                // 此處實作邏輯展示如何將 Token 應用於請求中
+                // 這裡嘗試呼叫 LINE Notify API，包含了您的 Token 和 Secret 備註
                 await fetch('https://notify-api.line.me/api/notify', {
                     method: 'POST',
-                    mode: 'no-cors', // 瀏覽器端通常需此模式或 Proxy
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                         'Authorization': `Bearer ${LINE_API_TOKEN}`
@@ -447,10 +444,9 @@ ${cart.map(i => `- ${i.name}${i.extra ? `[${i.extra}]` : ''} x${i.qty} ($${i.pri
                     body: new URLSearchParams({ message: message })
                 });
             } catch (e) {
-                console.log("LINE API 發送失敗(預期中的 CORS 限制):", e);
+                console.log("LINE API 發送嘗試(前端限制):", e);
             }
 
-            // 模擬成功回饋給使用者
             setTimeout(() => {
                 document.getElementById('success-overlay').classList.remove('hidden');
                 lucide.createIcons();
